@@ -1,0 +1,476 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum LibraryStatus {
+  PLAYING
+  COMPLETED
+  DROPPED
+  PAUSED
+  PLAN_TO_PLAY
+}
+
+enum NotificationType {
+  REVIEW_LIKE
+  REVIEW_COMMENT
+  ACHIEVEMENT_UNLOCKED
+  GAME_ADDED
+  FOLLOW
+  SYSTEM
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  banner        String?
+  bio           String?
+  username      String?   @unique
+  password      String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  library        LibraryEntry[]
+  reviews        Review[]
+  ratings        Rating[]
+  wishlists      Wishlist[]
+  collections    Collection[]
+  achievements   UserAchievement[]
+  screenshots    Screenshot[]
+  notifications  Notification[]
+  activities     Activity[]
+  reviewLikes    ReviewLike[]
+  reviewComments ReviewComment[]
+  followers      Follow[]          @relation("Following")
+  following      Follow[]          @relation("Followers")
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+model Game {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  description   String    @db.Text
+  shortDesc     String?
+  coverImage    String?
+  bannerImage   String?
+  releaseDate   DateTime?
+  developer     String?
+  publisher     String?
+  website       String?
+  metacriticScore Int?
+  steamAppId    String?
+  igdbId        String?
+  featured      Boolean   @default(false)
+  published     Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  genres         GameGenre[]
+  categories     GameCategory[]
+  platforms      GamePlatform[]
+  reviews        Review[]
+  ratings        Rating[]
+  libraryEntries LibraryEntry[]
+  wishlists      Wishlist[]
+  collectionItems CollectionItem[]
+  screenshots    Screenshot[]
+  tags           GameTag[]
+
+  @@index([slug])
+  @@index([title])
+  @@index([featured])
+  @@map("games")
+}
+
+model Genre {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+  description String?
+  color       String?
+  games       GameGenre[]
+  createdAt   DateTime    @default(now())
+
+  @@map("genres")
+}
+
+model GameGenre {
+  gameId  String
+  genreId String
+  game    Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([gameId, genreId])
+  @@map("game_genres")
+}
+
+model Category {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  slug        String         @unique
+  description String?
+  icon        String?
+  games       GameCategory[]
+  createdAt   DateTime       @default(now())
+
+  @@map("categories")
+}
+
+model GameCategory {
+  gameId     String
+  categoryId String
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([gameId, categoryId])
+  @@map("game_categories")
+}
+
+model Platform {
+  id    String         @id @default(cuid())
+  name  String         @unique
+  slug  String         @unique
+  icon  String?
+  games GamePlatform[]
+
+  @@map("platforms")
+}
+
+model GamePlatform {
+  gameId     String
+  platformId String
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  platform   Platform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+
+  @@id([gameId, platformId])
+  @@map("game_platforms")
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  slug  String    @unique
+  games GameTag[]
+
+  @@map("tags")
+}
+
+model GameTag {
+  gameId String
+  tagId  String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([gameId, tagId])
+  @@map("game_tags")
+}
+
+model LibraryEntry {
+  id          String        @id @default(cuid())
+  userId      String
+  gameId      String
+  status      LibraryStatus @default(PLAN_TO_PLAY)
+  hoursPlayed Float?
+  startedAt   DateTime?
+  completedAt DateTime?
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game        Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@index([gameId])
+  @@map("library_entries")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  title     String?
+  content   String   @db.Text
+  rating    Int      @default(0)
+  spoiler   Boolean  @default(false)
+  published Boolean  @default(true)
+  reported  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game     Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  likes    ReviewLike[]
+  comments ReviewComment[]
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@index([gameId])
+  @@map("reviews")
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  userId    String
+  reviewId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewId])
+  @@map("review_likes")
+}
+
+model ReviewComment {
+  id        String   @id @default(cuid())
+  userId    String
+  reviewId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@map("review_comments")
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  score     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@map("ratings")
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  priority  Int      @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@map("wishlists")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  coverImage  String?
+  public      Boolean  @default(true)
+  slug        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CollectionItem[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+  @@map("collections")
+}
+
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  gameId       String
+  order        Int        @default(0)
+  notes        String?
+  addedAt      DateTime   @default(now())
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  game       Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, gameId])
+  @@map("collection_items")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String?
+  points      Int      @default(10)
+  condition   String
+  createdAt   DateTime @default(now())
+
+  users UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model Screenshot {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  url       String
+  publicId  String
+  caption   String?
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@map("screenshots")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model Activity {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  senderId    String
+  recipientId String
+  content     String   @db.Text
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  sender    User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, recipientId])
+  @@index([recipientId, read])
+  @@index([createdAt])
+  @@map("messages")
+}
