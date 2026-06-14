@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from "@/components/shared/image-upload";
 
 interface OptionItem {
   id: string;
@@ -66,8 +67,6 @@ const schema = z.object({
   slug: z.string().min(1, "Slug is required").max(220),
   description: z.string().min(1, "Description is required"),
   shortDesc: z.string().max(300).optional().or(z.literal("")),
-  coverImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  bannerImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   releaseDate: z.string().optional().or(z.literal("")),
   developer: z.string().max(150).optional().or(z.literal("")),
   publisher: z.string().max(150).optional().or(z.literal("")),
@@ -141,6 +140,8 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
   const [genreIds, setGenreIds] = useState<string[]>(game.genres.map((g) => g.genre.id));
   const [platformIds, setPlatformIds] = useState<string[]>(game.platforms.map((p) => p.platform.id));
   const [categoryIds, setCategoryIds] = useState<string[]>(game.categories.map((c) => c.category.id));
+  const [coverImageUrl, setCoverImageUrl] = useState(game.coverImage ?? "");
+  const [bannerImageUrl, setBannerImageUrl] = useState(game.bannerImage ?? "");
 
   const {
     register,
@@ -154,8 +155,6 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
       slug: game.slug,
       description: game.description,
       shortDesc: game.shortDesc ?? "",
-      coverImage: game.coverImage ?? "",
-      bannerImage: game.bannerImage ?? "",
       releaseDate: toDateInputValue(game.releaseDate),
       developer: game.developer ?? "",
       publisher: game.publisher ?? "",
@@ -176,8 +175,8 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
         slug: data.slug,
         description: data.description,
         shortDesc: data.shortDesc || null,
-        coverImage: data.coverImage || null,
-        bannerImage: data.bannerImage || null,
+        coverImage: coverImageUrl || null,
+        bannerImage: bannerImageUrl || null,
         releaseDate: data.releaseDate ? new Date(data.releaseDate).toISOString() : null,
         developer: data.developer || null,
         publisher: data.publisher || null,
@@ -309,15 +308,21 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
             <CardTitle className="text-base">Media</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="coverImage">Cover Image URL</Label>
-                <Input id="coverImage" placeholder="https://..." error={errors.coverImage?.message} {...register("coverImage")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bannerImage">Banner Image URL</Label>
-                <Input id="bannerImage" placeholder="https://..." error={errors.bannerImage?.message} {...register("bannerImage")} />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <ImageUpload
+                label="Cover Image"
+                value={coverImageUrl}
+                onChange={setCoverImageUrl}
+                uploadType="cover"
+                aspectRatio="portrait"
+              />
+              <ImageUpload
+                label="Banner Image"
+                value={bannerImageUrl}
+                onChange={setBannerImageUrl}
+                uploadType="banner"
+                aspectRatio="landscape"
+              />
             </div>
           </CardContent>
         </Card>

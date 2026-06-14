@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { slugify } from "@/lib/utils";
+import { ImageUpload } from "@/components/shared/image-upload";
 
 interface OptionItem {
   id: string;
@@ -37,8 +38,6 @@ const schema = z.object({
   slug: z.string().min(1, "Slug is required").max(220),
   description: z.string().min(1, "Description is required"),
   shortDesc: z.string().max(300).optional().or(z.literal("")),
-  coverImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  bannerImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   releaseDate: z.string().optional().or(z.literal("")),
   developer: z.string().max(150).optional().or(z.literal("")),
   publisher: z.string().max(150).optional().or(z.literal("")),
@@ -106,6 +105,8 @@ export function NewGameClient({ genres, platforms, categories }: NewGameClientPr
   const [genreIds, setGenreIds] = useState<string[]>([]);
   const [platformIds, setPlatformIds] = useState<string[]>([]);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [bannerImageUrl, setBannerImageUrl] = useState("");
 
   const {
     register,
@@ -139,8 +140,8 @@ export function NewGameClient({ genres, platforms, categories }: NewGameClientPr
         slug: data.slug,
         description: data.description,
         shortDesc: data.shortDesc || null,
-        coverImage: data.coverImage || null,
-        bannerImage: data.bannerImage || null,
+        coverImage: coverImageUrl || null,
+        bannerImage: bannerImageUrl || null,
         releaseDate: data.releaseDate || null,
         developer: data.developer || null,
         publisher: data.publisher || null,
@@ -271,25 +272,21 @@ export function NewGameClient({ genres, platforms, categories }: NewGameClientPr
             <CardTitle className="text-base">Media</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="coverImage">Cover Image URL</Label>
-                <Input
-                  id="coverImage"
-                  placeholder="https://..."
-                  error={errors.coverImage?.message}
-                  {...register("coverImage")}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bannerImage">Banner Image URL</Label>
-                <Input
-                  id="bannerImage"
-                  placeholder="https://..."
-                  error={errors.bannerImage?.message}
-                  {...register("bannerImage")}
-                />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <ImageUpload
+                label="Cover Image"
+                value={coverImageUrl}
+                onChange={setCoverImageUrl}
+                uploadType="cover"
+                aspectRatio="portrait"
+              />
+              <ImageUpload
+                label="Banner Image"
+                value={bannerImageUrl}
+                onChange={setBannerImageUrl}
+                uploadType="banner"
+                aspectRatio="landscape"
+              />
             </div>
           </CardContent>
         </Card>
