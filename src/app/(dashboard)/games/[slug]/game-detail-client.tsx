@@ -63,6 +63,10 @@ export function GameDetailClient({
   const [hoverScore, setHoverScore] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewContent, setReviewContent] = useState(userReview?.content ?? "");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [localReviews, setLocalReviews] = useState(reviews);
+  const [hasReviewed, setHasReviewed] = useState(!!userReview);
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
 
   async function toggleWishlist() {
@@ -89,6 +93,36 @@ export function GameDetailClient({
       toast({ title: "Library updated", description: `Marked as ${LIBRARY_STATUS_LABELS[status]}` });
     } catch {
       toast({ title: "Error", variant: "destructive" });
+    }
+  }
+
+  async function submitReview() {
+    if (!reviewContent.trim() || reviewContent.trim().length < 10) {
+      toast({ title: "Review too short", description: "Your review must be at least 10 characters.", variant: "destructive" });
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: game.id, content: reviewContent.trim(), rating: reviewRating, spoiler: false }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Failed to publish review", description: data.error ?? "Please try again.", variant: "destructive" });
+        return;
+      }
+      setLocalReviews((prev) => [data, ...prev]);
+      setHasReviewed(true);
+      setShowReviewForm(false);
+      setReviewContent("");
+      setReviewRating(0);
+      toast({ title: "Review published!", description: "Your review has been posted." });
+    } catch {
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
+    } finally {
+      setSubmittingReview(false);
     }
   }
 
@@ -255,7 +289,7 @@ export function GameDetailClient({
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Reviews ({game._count?.reviews})
-                {isAuthenticated && !userReview && (
+                {isAuthenticated && !hasReviewed && (
                   <Button size="sm" variant="outline" onClick={() => setShowReviewForm(!showReviewForm)}>
                     Write a review
                   </Button>
@@ -266,27 +300,49 @@ export function GameDetailClient({
               {showReviewForm && (
                 <div className="mb-6 p-4 rounded-xl border border-primary/20 bg-primary/5">
                   <h4 className="font-semibold mb-3">Your Review</h4>
+                  <div className="flex items-center gap-1 mb-3">
+                    <span className="text-xs text-muted-foreground mr-2">Rating:</span>
+                    {[1,2,3,4,5,6,7,8,9,10].map((score) => (
+                      <button
+                        key={score}
+                        type="button"
+                        onClick={() => setReviewRating(score)}
+                        className={`w-6 h-6 rounded text-xs font-bold transition-all ${
+                          score <= reviewRating
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-muted-foreground hover:bg-primary/20"
+                        }`}
+                      >
+                        {score}
+                      </button>
+                    ))}
+                    {reviewRating > 0 && (
+                      <button type="button" onClick={() => setReviewRating(0)} className="ml-1 text-xs text-muted-foreground hover:text-destructive">✕</button>
+                    )}
+                  </div>
                   <textarea
                     value={reviewContent}
                     onChange={(e) => setReviewContent(e.target.value)}
-                    placeholder="Share your thoughts about this game..."
+                    placeholder="Share your thoughts about this game... (min. 10 characters)"
                     className="w-full min-h-[120px] rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                   />
                   <div className="flex justify-end gap-2 mt-3">
-                    <Button variant="ghost" size="sm" onClick={() => setShowReviewForm(false)}>Cancel</Button>
-                    <Button variant="gradient" size="sm">Publish review</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowReviewForm(false); setReviewContent(""); setReviewRating(0); }} disabled={submittingReview}>Cancel</Button>
+                    <Button variant="gradient" size="sm" onClick={submitReview} loading={submittingReview} disabled={submittingReview || reviewContent.trim().length < 10}>
+                      Publish review
+                    </Button>
                   </div>
                 </div>
               )}
 
-              {reviews.length === 0 ? (
+              {localReviews.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <StarSolid className="h-8 w-8 mx-auto mb-2 opacity-20" />
                   <p className="text-sm">No reviews yet. Be the first!</p>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {reviews.map((review) => (
+                  {localReviews.map((review) => (
                     <div key={review.id} className="flex gap-4">
                       <Avatar className="h-9 w-9 flex-shrink-0">
                         <AvatarImage src={review.user.image ?? undefined} />

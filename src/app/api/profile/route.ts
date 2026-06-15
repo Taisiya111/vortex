@@ -71,6 +71,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function DELETE(_req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    await prisma.user.delete({ where: { id: session.user.id } });
+    return NextResponse.json({ message: "Account deleted." });
+  } catch (err) {
+    console.error("[DELETE /api/profile]", err);
+    return NextResponse.json({ error: "Failed to delete account." }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: NextRequest) {
   try {
     const session = await auth();

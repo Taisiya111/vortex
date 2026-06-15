@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
   UserCircleIcon,
@@ -91,6 +91,7 @@ export default function SettingsPage() {
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -203,6 +204,25 @@ export default function SettingsPage() {
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/profile", { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to delete account");
+      }
+      await signOut({ callbackUrl: "/" });
+    } catch (err: unknown) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Something went wrong",
+        variant: "destructive",
+      });
+      setIsDeleting(false);
     }
   }
 
@@ -760,7 +780,9 @@ export default function SettingsPage() {
             </Button>
             <Button
               variant="destructive"
-              disabled={deleteConfirmText !== "DELETE"}
+              disabled={deleteConfirmText !== "DELETE" || isDeleting}
+              loading={isDeleting}
+              onClick={handleDeleteAccount}
             >
               Permanently Delete Account
             </Button>
