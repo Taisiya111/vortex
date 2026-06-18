@@ -126,7 +126,8 @@ model Game {
   publisher     String?
   website       String?
   metacriticScore Int?
-  price         Float?
+  priceMin      Float?
+  priceMax      Float?
   steamAppId    String?
   igdbId        String?
   featured      Boolean   @default(false)

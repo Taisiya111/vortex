@@ -42,13 +42,29 @@ export function formatRelativeDate(date: Date | string): string {
   return `${years}y ago`;
 }
 
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
 export function formatPrice(price: number | null | undefined): string {
   if (price == null) return "N/A";
   if (price === 0) return "Free";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(price);
+  return currencyFormatter.format(price);
+}
+
+export function formatPriceRange(
+  priceMin: number | null | undefined,
+  priceMax: number | null | undefined
+): string {
+  if (priceMin == null && priceMax == null) return "N/A";
+  if (priceMin === 0 && (priceMax == null || priceMax === 0)) return "Free";
+
+  const min = priceMin ?? priceMax!;
+  const max = priceMax ?? priceMin!;
+
+  if (min === max) return currencyFormatter.format(min);
+  return `${currencyFormatter.format(min)} – ${currencyFormatter.format(max)}`;
 }
 
 export function formatNumber(n: number): string {

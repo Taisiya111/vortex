@@ -25,7 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GameCard } from "@/components/shared/game-card";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate, formatPrice, formatRelativeDate, getInitials, LIBRARY_STATUS_LABELS } from "@/lib/utils";
+import { formatDate, formatPriceRange, formatRelativeDate, getInitials, LIBRARY_STATUS_LABELS } from "@/lib/utils";
 import type { GameWithRelations } from "@/types";
 
 interface GameDetailClientProps {
@@ -209,9 +209,9 @@ export function GameDetailClient({
                 MC: {game.metacriticScore}
               </div>
             )}
-            {game.price != null && (
+            {(game.priceMin != null || game.priceMax != null) && (
               <div className="px-3 py-1 rounded-lg text-sm font-bold bg-primary/10 text-primary border border-primary/30">
-                {formatPrice(game.price)}
+                {formatPriceRange(game.priceMin, game.priceMax)}
               </div>
             )}
           </div>
@@ -438,10 +438,16 @@ export function GameDetailClient({
                   <span className="font-medium">{game.publisher}</span>
                 </div>
               )}
-              {game.price != null && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Price</span>
-                  <span className="font-medium">{formatPrice(game.price)}</span>
+              {(game.priceMin != null || game.priceMax != null) && (
+                <div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Market price</span>
+                    <span className="font-medium">{formatPriceRange(game.priceMin, game.priceMax)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground/70 mt-1 leading-snug">
+                    Approximate market price, not the price of buying this game on Vortex. Actual price varies
+                    by platform, store, region, and sales.
+                  </p>
                 </div>
               )}
               <Separator />

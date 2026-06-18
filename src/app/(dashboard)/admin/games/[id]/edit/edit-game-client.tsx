@@ -48,7 +48,8 @@ interface GameDetail {
   publisher: string | null;
   website: string | null;
   metacriticScore: number | null;
-  price: number | null;
+  priceMin: number | null;
+  priceMax: number | null;
   featured: boolean;
   published: boolean;
   genres: { genre: OptionItem }[];
@@ -63,30 +64,38 @@ interface EditGameClientProps {
   categories: OptionItem[];
 }
 
-const schema = z.object({
-  title: z.string().min(1, "Title is required").max(200),
-  slug: z.string().min(1, "Slug is required").max(220),
-  description: z.string().min(1, "Description is required"),
-  shortDesc: z.string().max(300).optional().or(z.literal("")),
-  releaseDate: z.string().optional().or(z.literal("")),
-  developer: z.string().max(150).optional().or(z.literal("")),
-  publisher: z.string().max(150).optional().or(z.literal("")),
-  website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  metacriticScore: z
-    .string()
-    .optional()
-    .or(z.literal(""))
-    .refine((v) => !v || (/^\d+$/.test(v) && Number(v) >= 0 && Number(v) <= 100), {
-      message: "Must be a number between 0 and 100",
-    }),
-  price: z
-    .string()
-    .optional()
-    .or(z.literal(""))
-    .refine((v) => !v || (/^\d+(\.\d{1,2})?$/.test(v) && Number(v) >= 0 && Number(v) <= 99999), {
-      message: "Must be a valid price (e.g. 59.99)",
-    }),
-});
+const priceField = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .refine((v) => !v || (/^\d+(\.\d{1,2})?$/.test(v) && Number(v) >= 0 && Number(v) <= 99999), {
+    message: "Must be a valid price (e.g. 59.99)",
+  });
+
+const schema = z
+  .object({
+    title: z.string().min(1, "Title is required").max(200),
+    slug: z.string().min(1, "Slug is required").max(220),
+    description: z.string().min(1, "Description is required"),
+    shortDesc: z.string().max(300).optional().or(z.literal("")),
+    releaseDate: z.string().optional().or(z.literal("")),
+    developer: z.string().max(150).optional().or(z.literal("")),
+    publisher: z.string().max(150).optional().or(z.literal("")),
+    website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    metacriticScore: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((v) => !v || (/^\d+$/.test(v) && Number(v) >= 0 && Number(v) <= 100), {
+        message: "Must be a number between 0 and 100",
+      }),
+    priceMin: priceField,
+    priceMax: priceField,
+  })
+  .refine(
+    (data) => !data.priceMin || !data.priceMax || Number(data.priceMax) >= Number(data.priceMin),
+    { message: "Max price must be ≥ min price", path: ["priceMax"] }
+  );
 
 type FormData = z.infer<typeof schema>;
 
@@ -168,7 +177,8 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
       publisher: game.publisher ?? "",
       website: game.website ?? "",
       metacriticScore: game.metacriticScore != null ? String(game.metacriticScore) : "",
-      price: game.price != null ? String(game.price) : "",
+      priceMin: game.priceMin != null ? String(game.priceMin) : "",
+      priceMax: game.priceMax != null ? String(game.priceMax) : "",
     },
   });
 
@@ -194,8 +204,10 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
           data.metacriticScore === "" || data.metacriticScore === undefined
             ? null
             : Number(data.metacriticScore),
-        price:
-          data.price === "" || data.price === undefined ? null : Number(data.price),
+        priceMin:
+          data.priceMin === "" || data.priceMin === undefined ? null : Number(data.priceMin),
+        priceMax:
+          data.priceMax === "" || data.priceMax === undefined ? null : Number(data.priceMax),
         featured,
         published,
         genreIds,
@@ -368,18 +380,33 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
                   {...register("metacriticScore")}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Price (USD)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="59.99"
-                  error={errors.price?.message}
-                  {...register("price")}
-                />
-                <p className="text-xs text-muted-foreground">Approximate market price. Leave empty if unknown.</p>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Price Range (USD)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    id="priceMin"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Min, e.g. 19.99"
+                    error={errors.priceMin?.message}
+                    {...register("priceMin")}
+                  />
+                  <Input
+                    id="priceMax"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Max, e.g. 59.99"
+                    error={errors.priceMax?.message}
+                    {...register("priceMax")}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This is an <span className="font-medium text-foreground">approximate market price</span>, not the
+                  price of buying the game on Vortex. Actual prices vary by platform, store, region, and ongoing
+                  sales — use this only as a rough guide. Leave empty if unknown.
+                </p>
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="website">Website</Label>

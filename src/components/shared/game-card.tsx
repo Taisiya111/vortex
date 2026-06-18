@@ -8,7 +8,7 @@ import { StarIcon, BookmarkIcon, PlusIcon } from "@heroicons/react/24/solid";
 import { StarIcon as StarOutline } from "@heroicons/react/24/outline";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatPrice, truncate } from "@/lib/utils";
+import { cn, formatPriceRange, truncate } from "@/lib/utils";
 import type { GameWithRelations } from "@/types";
 
 interface GameCardProps {
@@ -62,8 +62,10 @@ export function GameCard({ game, variant = "grid", className, showActions = true
                     </Badge>
                   ))}
                 </div>
-                {game.price != null && (
-                  <span className="text-xs font-semibold text-primary ml-auto">{formatPrice(game.price)}</span>
+                {(game.priceMin != null || game.priceMax != null) && (
+                  <span className="text-xs font-semibold text-primary ml-auto" title="Approximate market price, not the price on Vortex">
+                    {formatPriceRange(game.priceMin, game.priceMax)}
+                  </span>
                 )}
               </div>
             </div>
@@ -183,8 +185,13 @@ export function GameCard({ game, variant = "grid", className, showActions = true
               <span className="text-xs text-muted-foreground ml-1">({reviewCount})</span>
             </div>
             <div className="flex items-center gap-1.5">
-              {game.price != null && (
-                <span className="text-xs font-semibold text-primary">{formatPrice(game.price)}</span>
+              {(game.priceMin != null || game.priceMax != null) && (
+                <span
+                  className="text-xs font-semibold text-primary"
+                  title="Approximate market price, not the price on Vortex"
+                >
+                  {formatPriceRange(game.priceMin, game.priceMax)}
+                </span>
               )}
               {game.genres.slice(0, 1).map(({ genre }) => (
                 <Badge key={genre.id} variant="secondary" className="text-xs py-0 px-1.5">

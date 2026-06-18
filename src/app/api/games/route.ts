@@ -4,27 +4,34 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { slugify } from "@/lib/utils";
 
-const createSchema = z.object({
-  title: z.string().min(1).max(200),
-  slug: z.string().min(1).max(220).optional(),
-  description: z.string().min(1),
-  shortDesc: z.string().max(300).optional().nullable(),
-  coverImage: z.string().url().optional().nullable(),
-  bannerImage: z.string().url().optional().nullable(),
-  releaseDate: z.string().optional().nullable(),
-  developer: z.string().max(150).optional().nullable(),
-  publisher: z.string().max(150).optional().nullable(),
-  website: z.string().url().optional().nullable(),
-  metacriticScore: z.number().int().min(0).max(100).optional().nullable(),
-  price: z.number().min(0).max(99999).optional().nullable(),
-  steamAppId: z.string().optional().nullable(),
-  igdbId: z.string().optional().nullable(),
-  featured: z.boolean().optional().default(false),
-  published: z.boolean().optional().default(true),
-  genreIds: z.array(z.string()).optional().default([]),
-  platformIds: z.array(z.string()).optional().default([]),
-  categoryIds: z.array(z.string()).optional().default([]),
-});
+const createSchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    slug: z.string().min(1).max(220).optional(),
+    description: z.string().min(1),
+    shortDesc: z.string().max(300).optional().nullable(),
+    coverImage: z.string().url().optional().nullable(),
+    bannerImage: z.string().url().optional().nullable(),
+    releaseDate: z.string().optional().nullable(),
+    developer: z.string().max(150).optional().nullable(),
+    publisher: z.string().max(150).optional().nullable(),
+    website: z.string().url().optional().nullable(),
+    metacriticScore: z.number().int().min(0).max(100).optional().nullable(),
+    priceMin: z.number().min(0).max(99999).optional().nullable(),
+    priceMax: z.number().min(0).max(99999).optional().nullable(),
+    steamAppId: z.string().optional().nullable(),
+    igdbId: z.string().optional().nullable(),
+    featured: z.boolean().optional().default(false),
+    published: z.boolean().optional().default(true),
+    genreIds: z.array(z.string()).optional().default([]),
+    platformIds: z.array(z.string()).optional().default([]),
+    categoryIds: z.array(z.string()).optional().default([]),
+  })
+  .refine(
+    (data) =>
+      data.priceMin == null || data.priceMax == null || data.priceMax >= data.priceMin,
+    { message: "Maximum price must be greater than or equal to minimum price.", path: ["priceMax"] }
+  );
 
 export async function POST(req: NextRequest) {
   try {

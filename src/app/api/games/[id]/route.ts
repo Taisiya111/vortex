@@ -76,7 +76,8 @@ export async function PATCH(
       "publisher",
       "website",
       "metacriticScore",
-      "price",
+      "priceMin",
+      "priceMax",
       "steamAppId",
       "igdbId",
       "featured",
@@ -93,6 +94,17 @@ export async function PATCH(
     if ("releaseDate" in data) {
       const releaseDate = data.releaseDate;
       data.releaseDate = releaseDate ? new Date(releaseDate as string) : null;
+    }
+
+    if (
+      data.priceMin != null &&
+      data.priceMax != null &&
+      (data.priceMax as number) < (data.priceMin as number)
+    ) {
+      return NextResponse.json(
+        { error: "Maximum price must be greater than or equal to minimum price." },
+        { status: 400 }
+      );
     }
 
     const hasGenreIds = Array.isArray(body.genreIds);
