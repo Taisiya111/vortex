@@ -13,6 +13,7 @@ export interface GameWithRelations {
   publisher?: string | null;
   website?: string | null;
   metacriticScore?: number | null;
+  price?: number | null;
   featured: boolean;
   published: boolean;
   createdAt: Date;

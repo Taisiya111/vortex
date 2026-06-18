@@ -25,7 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GameCard } from "@/components/shared/game-card";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate, formatRelativeDate, getInitials, LIBRARY_STATUS_LABELS } from "@/lib/utils";
+import { formatDate, formatPrice, formatRelativeDate, getInitials, LIBRARY_STATUS_LABELS } from "@/lib/utils";
 import type { GameWithRelations } from "@/types";
 
 interface GameDetailClientProps {
@@ -207,6 +207,11 @@ export function GameDetailClient({
             {game.metacriticScore && (
               <div className={`px-3 py-1 rounded-lg text-sm font-bold ${game.metacriticScore >= 75 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"}`}>
                 MC: {game.metacriticScore}
+              </div>
+            )}
+            {game.price != null && (
+              <div className="px-3 py-1 rounded-lg text-sm font-bold bg-primary/10 text-primary border border-primary/30">
+                {formatPrice(game.price)}
               </div>
             )}
           </div>
@@ -431,6 +436,12 @@ export function GameDetailClient({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Publisher</span>
                   <span className="font-medium">{game.publisher}</span>
+                </div>
+              )}
+              {game.price != null && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Price</span>
+                  <span className="font-medium">{formatPrice(game.price)}</span>
                 </div>
               )}
               <Separator />

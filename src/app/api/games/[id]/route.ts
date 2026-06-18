@@ -76,6 +76,7 @@ export async function PATCH(
       "publisher",
       "website",
       "metacriticScore",
+      "price",
       "steamAppId",
       "igdbId",
       "featured",

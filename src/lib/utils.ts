@@ -42,6 +42,15 @@ export function formatRelativeDate(date: Date | string): string {
   return `${years}y ago`;
 }
 
+export function formatPrice(price: number | null | undefined): string {
+  if (price == null) return "N/A";
+  if (price === 0) return "Free";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(price);
+}
+
 export function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;

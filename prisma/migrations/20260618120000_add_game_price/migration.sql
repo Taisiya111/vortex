@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "games" ADD COLUMN "price" DOUBLE PRECISION;

@@ -16,6 +16,7 @@ const createSchema = z.object({
   publisher: z.string().max(150).optional().nullable(),
   website: z.string().url().optional().nullable(),
   metacriticScore: z.number().int().min(0).max(100).optional().nullable(),
+  price: z.number().min(0).max(99999).optional().nullable(),
   steamAppId: z.string().optional().nullable(),
   igdbId: z.string().optional().nullable(),
   featured: z.boolean().optional().default(false),

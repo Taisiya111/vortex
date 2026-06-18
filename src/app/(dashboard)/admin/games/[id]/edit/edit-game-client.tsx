@@ -48,6 +48,7 @@ interface GameDetail {
   publisher: string | null;
   website: string | null;
   metacriticScore: number | null;
+  price: number | null;
   featured: boolean;
   published: boolean;
   genres: { genre: OptionItem }[];
@@ -77,6 +78,13 @@ const schema = z.object({
     .or(z.literal(""))
     .refine((v) => !v || (/^\d+$/.test(v) && Number(v) >= 0 && Number(v) <= 100), {
       message: "Must be a number between 0 and 100",
+    }),
+  price: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((v) => !v || (/^\d+(\.\d{1,2})?$/.test(v) && Number(v) >= 0 && Number(v) <= 99999), {
+      message: "Must be a valid price (e.g. 59.99)",
     }),
 });
 
@@ -160,6 +168,7 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
       publisher: game.publisher ?? "",
       website: game.website ?? "",
       metacriticScore: game.metacriticScore != null ? String(game.metacriticScore) : "",
+      price: game.price != null ? String(game.price) : "",
     },
   });
 
@@ -185,6 +194,8 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
           data.metacriticScore === "" || data.metacriticScore === undefined
             ? null
             : Number(data.metacriticScore),
+        price:
+          data.price === "" || data.price === undefined ? null : Number(data.price),
         featured,
         published,
         genreIds,
@@ -356,6 +367,19 @@ export function EditGameClient({ game, genres, platforms, categories }: EditGame
                   error={errors.metacriticScore?.message}
                   {...register("metacriticScore")}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (USD)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="59.99"
+                  error={errors.price?.message}
+                  {...register("price")}
+                />
+                <p className="text-xs text-muted-foreground">Approximate market price. Leave empty if unknown.</p>
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="website">Website</Label>
